@@ -1,0 +1,33 @@
+---
+name: monito
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 8 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+    steps:
+      - name: Use checkout v2 with all git log available
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install required packages
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y mailutils
+          sudo python3 -m pip install bs4
+      - name: run monito
+        run: |
+          STR=$(python3 ./monito.py)
+          SUB='- NOK'
+          if [[ "$STR" == *"$SUB"* ]]; then
+              echo "$STR" | mail -s "Deals alert" carloscamachoucv@gmail.com
+          fi
